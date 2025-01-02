@@ -1,40 +1,31 @@
-'use client';
-
 import React, { useState } from 'react';
+import FileUploader from './components/FileUploader';
+import NotesSplitList from './components/NotesSplitList';
+import splitByHeading from './utils/splitByHeading';
+import downloadFile from './utils/downloadFile';
 import { marked } from 'marked';
 import html2pdf from 'html2pdf.js';
-import FileUploader from '@/components/FileUploader';
-import NotesSplitList from '@/components/NotesSplitList';
-import splitByHeading from '@/utils/splitByHeading';
-import downloadFile from '@/utils/downloadFile';
+import './index.css';
+// import { Analytics } from "@vercel/analytics/react"
 
-interface Note {
-  title: string;
-  content: string;
-}
-
-interface GeneratedNote {
-  title: string;
-  mdContent: string;
-}
-
-export default function Home() {
+function App() {
   const [extractedText, setExtractedText] = useState('');
-  const [splittedNotes, setSplittedNotes] = useState<Note[]>([]);
-  const [generatedNotes, setGeneratedNotes] = useState<GeneratedNote[]>([]);
+  const [splittedNotes, setSplittedNotes] = useState([]);
+  const [generatedNotes, setGeneratedNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
   const [apiKey, setApiKey] = useState('');
   const [useCustomKey, setUseCustomKey] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [customPrompt, setCustomPrompt] = useState(
+    // eslint-disable-next-line
     `请帮我用 markdown 格式整理下面的课程笔记。尽可能保持原来的知识结构。在适当的地方进行补充增加完整性。除了笔记整理的结果，不要输出任何东西。不要使用 code block 格式。
 标题: {{title}}
 内容: {{content}}`
   );
 
   // 接收抽取完的文本
-  const handleExtractedText = (text: string) => {
+  const handleExtractedText = (text) => {
     setExtractedText(text);
     setSplittedNotes([]);
     setGeneratedNotes([]);
@@ -48,6 +39,9 @@ export default function Home() {
   };
 
   // 生成笔记（调用 GPT）
+  // 这里示例：一次性把拆分后的所有段落发送给后端
+  // 后端再返回对应的 Markdown 内容数组
+  // 也可前端循环逐段调用
   const handleGenerateNotes = async () => {
     if (splittedNotes.length === 0) {
       alert('请先进行"笔记拆分"');
@@ -66,11 +60,11 @@ export default function Home() {
           prompt: customPrompt
         }),
       });
-      
       if (!response.ok) {
         throw new Error(`Generate notes failed: ${response.statusText}`);
       }
-      
+      // 后端为了方便，这里返回的是 JSON
+      // 每个章节对应一个 { title, mdContent } 的条目
       const data = await response.json();
       setGeneratedNotes(data.generated);
     } catch (error) {
@@ -82,6 +76,7 @@ export default function Home() {
   };
 
   // 下载为 MD
+  // 将多个章节的 Markdown 拼接在一起，再下载
   const handleDownloadMD = () => {
     if (generatedNotes.length === 0) {
       alert('没有可下载的内容，请先生成。');
@@ -106,12 +101,16 @@ export default function Home() {
     generatedNotes.forEach((note) => {
       const content = `# ${note.title}\n\n${note.mdContent}`;
       const blob = new Blob([content], { type: 'text/markdown' });
+      // 使用标题作为文件名，移除特殊字符
       const fileName = `${note.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.md`;
       downloadFile(blob, fileName);
     });
   };
 
-  // 下载为 PDF
+  // 下载为 PDF（前端合并）
+  // 实际可使用 pdfmake、jspdf 等库，这里仅作示例
+  // 将合并后的 Markdown 转为 PDF 的逻辑需要额外的渲染步骤
+  // 下面仅作伪代码说明
   const handleDownloadPDF = async () => {
     if (generatedNotes.length === 0) {
       alert('没有可下载的内容，请先生成。');
@@ -119,55 +118,155 @@ export default function Home() {
     }
 
     try {
+      // 1. 合并全部 Markdown 内容
       const mergedMd = generatedNotes
         .map((item) => `# ${item.title}\n\n${item.mdContent}\n`)
         .join('\n');
 
+      // 2. 使用 marked 将合并的 MD 转为 HTML 字符串
       const htmlContent = marked(mergedMd);
+
+      // 3. 创建临时 DOM 容器并添加样式
       const tempElement = document.createElement('div');
-      tempElement.innerHTML = await htmlContent;
+      tempElement.innerHTML = htmlContent;
       tempElement.style.cssText = `
         padding: 40px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         line-height: 1.6;
       `;
 
+      // 添加内部样式
       const styleElement = document.createElement('style');
       styleElement.textContent = `
-        h1 { font-size: 28px; margin-top: 32px; margin-bottom: 16px; font-weight: 600; color: #1a202c; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-        h2 { font-size: 24px; margin-top: 24px; margin-bottom: 14px; font-weight: 600; color: #2d3748; }
-        h3 { font-size: 20px; margin-top: 20px; margin-bottom: 10px; font-weight: 600; color: #4a5568; }
-        p { margin-bottom: 12px; line-height: 1.6; color: #2d3748; }
-        code { background-color: #f7fafc; padding: 2px 6px; border-radius: 4px; font-family: 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 0.9em; color: #d53f8c; border: 1px solid #edf2f7; }
-        pre { background-color: #f7fafc; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #edf2f7; margin: 20px 0; }
-        pre code { color: #4a5568; border: none; padding: 0; background: none; }
-        ul, ol { margin-bottom: 16px; padding-left: 24px; color: #2d3748; }
-        li { margin-bottom: 8px; line-height: 1.5; }
-        blockquote { border-left: 4px solid #cbd5e0; padding-left: 16px; margin: 20px 0; color: #4a5568; font-style: italic; }
-        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-        th { background-color: #f7fafc; font-weight: 600; }
-        hr { border: none; border-top: 2px solid #e2e8f0; margin: 24px 0; }
+        h1 {
+          font-size: 28px;
+          margin-top: 32px;
+          margin-bottom: 16px;
+          font-weight: 600;
+          color: #1a202c;
+          border-bottom: 2px solid #e2e8f0;
+          padding-bottom: 8px;
+        }
+
+        h2 {
+          font-size: 24px;
+          margin-top: 24px;
+          margin-bottom: 14px;
+          font-weight: 600;
+          color: #2d3748;
+        }
+
+        h3 {
+          font-size: 20px;
+          margin-top: 20px;
+          margin-bottom: 10px;
+          font-weight: 600;
+          color: #4a5568;
+        }
+
+        /* 正文样式 */
+        p {
+          margin-bottom: 12px;
+          line-height: 1.6;
+          color: #2d3748;
+        }
+
+        /* 代码样式 */
+        code {
+          background-color: #f7fafc;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+          font-size: 0.9em;
+          color: #d53f8c;
+          border: 1px solid #edf2f7;
+        }
+
+        pre {
+          background-color: #f7fafc;
+          padding: 20px;
+          border-radius: 8px;
+          overflow-x: auto;
+          border: 1px solid #edf2f7;
+          margin: 20px 0;
+        }
+
+        pre code {
+          color: #4a5568;
+          border: none;
+          padding: 0;
+          background: none;
+        }
+
+        /* 列表样式 */
+        ul, ol {
+          margin-bottom: 16px;
+          padding-left: 24px;
+          color: #2d3748;
+        }
+
+        li {
+          margin-bottom: 8px;
+          line-height: 1.5;
+        }
+
+        /* 引用样式 */
+        blockquote {
+          border-left: 4px solid #cbd5e0;
+          padding-left: 16px;
+          margin: 20px 0;
+          color: #4a5568;
+          font-style: italic;
+        }
+
+        /* 表格样式 */
+        table {
+          border-collapse: collapse;
+          width: 100%;
+          margin: 20px 0;
+        }
+
+        th, td {
+          border: 1px solid #e2e8f0;
+          padding: 12px;
+          text-align: left;
+        }
+
+        th {
+          background-color: #f7fafc;
+          font-weight: 600;
+        }
+
+        /* 水平线样式 */
+        hr {
+          border: none;
+          border-top: 2px solid #e2e8f0;
+          margin: 24px 0;
+        }
       `;
       tempElement.appendChild(styleElement);
 
+      // 4. 配置 html2pdf 选项并导出
       const opt = {
-        margin: [15, 15, 15, 15],
+        margin: [15, 15, 15, 15], // [top, left, bottom, right]
         filename: 'notes_merged.pdf',
-        image: { type: 'jpeg', quality: 1.0 },
+        image: {
+          type: 'jpeg',
+          quality: 1.0    // 提高到最高质量
+        },
         html2canvas: {
-          scale: 3,
+          scale: 3,       // 提高缩放比例以获得更高分辨率
           useCORS: true,
-          logging: true,
-          letterRendering: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff'
+          logging: true,  // 帮助调试
+          letterRendering: true,  // 改善文字渲染
+          allowTaint: true,       // 允许跨域图片
+          backgroundColor: '#ffffff' // 确保白色背景
         },
         jsPDF: {
           unit: 'mm',
           format: 'a4',
           orientation: 'portrait',
-          compress: false
+          compress: false  // 避免压缩导致的质量损失
         }
       };
 
@@ -180,6 +279,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      {/* <Analytics /> */}
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-8">PKU 祖传笔记增强工具</h1>
 
@@ -187,10 +287,21 @@ export default function Home() {
           <div className="mb-4 text-sm text-gray-600">
             <h2 className="font-semibold text-gray-900 mb-2">使用方法：</h2>
             <ol className="list-decimal pl-5 space-y-2">
-              <li>找到页面上写着"选择文件"的按钮（通常在页面中间），点击这个按钮，会弹出一个文件选择窗口。在弹出的窗口中找到并选择你要处理的笔记文件（必须是 PDF 格式），然后点击"抽取笔记文本"按钮。</li>
-              <li>等待几秒钟，你的笔记内容会显示在一个可以编辑的文本框中。仔细看一下文字是否有错误（比如：把"人"识别成"入"这样的错误），如果发现错误，可以直接用键盘在文本框中修改。</li>
-              <li>找到每一章的大标题（比如："第一章 绪论"、"第二章 基础理论"等），在每个大标题的最前面加上一个井号（#）和一个空格。注意：只需要给最大的标题（章）加标记，小标题（节）不用加。</li>
-              <li>检查完所有内容后，点击"生成笔记"按钮。等待几秒钟，你的电脑会自动下载一个新文件，这个新文件的格式是 .md（一种常见的文本格式）。</li>
+              <li>
+                找到页面上写着"选择文件"的按钮（通常在页面中间），点击这个按钮，会弹出一个文件选择窗口。
+                在弹出的窗口中找到并选择你要处理的笔记文件（必须是 PDF 格式），然后点击"抽取笔记文本"按钮。
+              </li>
+              <li>
+                等待几秒钟，你的笔记内容会显示在一个可以编辑的文本框中。仔细看一下文字是否有错误（比如：把"人"识别成"入"这样的错误），
+                如果发现错误，可以直接用键盘在文本框中修改。
+              </li>
+              <li>
+                找到每一章的大标题（比如："第一章 绪论"、"第二章 基础理论"等），在每个大标题的最前面加上一个井号（#）和一个空格。
+                注意：只需要给最大的标题（章）加标记，小标题（节）不用加。
+              </li>
+              <li>
+                检查完所有内容后，点击"生成笔记"按钮。等待几秒钟，你的电脑会自动下载一个新文件，这个新文件的格式是 .md（一种常见的文本格式）。
+              </li>
             </ol>
           </div>
           <FileUploader onExtractComplete={handleExtractedText} />
@@ -208,7 +319,7 @@ export default function Home() {
                   setUseCustomKey(e.target.checked);
                   if (!e.target.checked) {
                     setApiKey('');
-                    setSelectedModel('gpt-4o-mini');
+                    setSelectedModel('gpt-4o-mini'); // Reset to default model when using system key
                   }
                 }}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -242,7 +353,8 @@ export default function Home() {
           >
             <h2 className="text-xl font-semibold text-gray-900">高级设定</h2>
             <svg
-              className={`w-5 h-5 transform transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 transform transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''
+                }`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -282,8 +394,7 @@ export default function Home() {
                   className={`px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                     ${selectedModel === model
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    }`}
+                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
                 >
                   {model}
                 </button>
@@ -371,3 +482,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default App;
