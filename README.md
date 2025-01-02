@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## PKU 祖传笔记增强工具
 
-## Getting Started
+这是一个可以帮你把 PDF 笔记转换成带目录的文档的小工具。
 
-First, run the development server:
+### 使用方法详细说明（小白版）
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **第一步：上传你的笔记**
+   - 找到页面上写着"选择文件"的按钮（通常在页面中间）
+   - 点击这个按钮，会弹出一个文件选择窗口
+   - 在弹出的窗口中找到并选择你要处理的笔记文件（必须是 PDF 格式）
+   - 找到并点击写着"抽取笔记文本"的按钮
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **第二步：给重要标题加标记**
+   - 找到每一章的大标题（比如："第一章 绪论"、"第二章 基础理论"等）
+   - 在每个大标题的最前面加上一个井号（#）和一个空格
+   - 举个例子：
+     * 原来的标题：`第一章 绪论`
+     * 加了标记后：`# 第一章 绪论`
+   - 注意：只需要给最大的标题（章）加标记，小标题（节）不用加
+3. 三：点击 “按分段点拆分“
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **第四步：生成最终文件**
+   - 点击"生成增强笔记"按钮
+   - 请等待笔记生成，你的电脑会自动下载一个新文件
+   - 这个新文件的格式是 .md（一种常见的文本格式）
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 遇到问题？
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+如果遇到任何问题或者不明白的地方，请及时联系我们寻求帮助。
