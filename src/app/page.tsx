@@ -1,12 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { marked } from 'marked';
-import html2pdf from 'html2pdf.js';
 import FileUploader from '@/components/FileUploader';
 import NotesSplitList from '@/components/NotesSplitList';
 import splitByHeading from '@/utils/splitByHeading';
 import downloadFile from '@/utils/downloadFile';
+
+// Browser-only imports
+let html2pdf: any;
+let marked: any;
+
+if (typeof window !== 'undefined') {
+  Promise.all([
+    import('html2pdf.js'),
+    import('marked')
+  ]).then(([html2pdfModule, markedModule]) => {
+    html2pdf = html2pdfModule.default;
+    marked = markedModule.marked;
+  });
+}
 
 interface Note {
   title: string;
@@ -123,9 +135,13 @@ export default function Home() {
         .map((item) => `# ${item.title}\n\n${item.mdContent}\n`)
         .join('\n');
 
-      const htmlContent = marked(mergedMd);
+      // Dynamically load dependencies
+      const markedInstance = await marked;
+      const html2pdfInstance = await html2pdf();
+      
+      const htmlContent = markedInstance(mergedMd);
       const tempElement = document.createElement('div');
-      tempElement.innerHTML = await htmlContent;
+      tempElement.innerHTML = htmlContent;
       tempElement.style.cssText = `
         padding: 40px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -171,7 +187,7 @@ export default function Home() {
         }
       };
 
-      await html2pdf().set(opt).from(tempElement).save();
+      await html2pdfInstance.set(opt).from(tempElement).save();
     } catch (error) {
       console.error(error);
       alert('导出 PDF 失败！');
