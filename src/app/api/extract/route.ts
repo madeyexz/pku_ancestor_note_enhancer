@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import mammoth from 'mammoth';
-import extract from 'pdf-text-extract';
+import pdfParse from 'pdf-parse-new';
 
 // Helper function to parse form data
 const parseForm = async (req: NextRequest) => {
@@ -16,21 +16,13 @@ const parseForm = async (req: NextRequest) => {
 
 // Helper function to extract text
 const extractText = async (filePath: string, fileExtension: string) => {
-    if (fileExtension === '.docx') {
+    if (fileExtension === '.docx' || fileExtension === '.doc') {
         const result = await mammoth.extractRawText({ path: filePath });
         return result.value;
     } else if (fileExtension === '.pdf') {
-        return new Promise<string>((resolve, reject) => {
-            extract(filePath, (err: Error | null, pages: string[]) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                // Join all pages with newlines
-                const fullText = pages.join('\n');
-                resolve(fullText.trim());
-            });
-        });
+        const dataBuffer = fs.readFileSync(filePath);
+        const data = await pdfParse(dataBuffer);
+        return data.text;
     }
     throw new Error('Unsupported file type');
 };
