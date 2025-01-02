@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+interface Note {
+    title: string;
+    content: string;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const { notes, model, apiKey, prompt } = await request.json();
@@ -13,7 +18,7 @@ export async function POST(request: NextRequest) {
         const actualModel = apiKey ? (model || 'gpt-4o-mini') : 'gpt-4o-mini';
 
         // Process all sections in parallel while maintaining order
-        const promises = notes.map(async (note: any, i: number) => {
+        const promises = notes.map(async (note: Note, i: number) => {
             try {
                 // Replace placeholders in the custom prompt
                 const actualPrompt = (prompt || `请帮我用 markdown 格式整理下面的课程笔记。尽可能保持原来的知识结构。在适当的地方进行补充增加完整性。除了笔记整理的结果，不要输出任何东西。不要使用 code block 格式。

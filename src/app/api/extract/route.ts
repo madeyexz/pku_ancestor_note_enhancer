@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import mammoth from 'mammoth';
-import TurndownService from 'turndown';
 import extract from 'pdf-text-extract';
 
 // Helper function to parse form data
@@ -17,8 +16,6 @@ const parseForm = async (req: NextRequest) => {
 
 // Helper function to extract text
 const extractText = async (filePath: string, fileExtension: string) => {
-    const turndownService = new TurndownService();
-
     if (fileExtension === '.docx') {
         const result = await mammoth.extractRawText({ path: filePath });
         return result.value;
