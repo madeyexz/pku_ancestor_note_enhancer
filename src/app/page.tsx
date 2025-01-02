@@ -144,8 +144,6 @@ export default function Home() {
 
       // Dynamically load dependencies
       const markedInstance = await marked;
-      const html2pdfInstance = await html2pdf();
-      
       const htmlContent = markedInstance(mergedMd);
       const tempElement = document.createElement('div');
       tempElement.innerHTML = htmlContent;
@@ -194,7 +192,8 @@ export default function Home() {
         }
       };
 
-      await html2pdfInstance.set(opt).from(tempElement).save();
+      await html2pdf().from(tempElement).set(opt).save();
+      
       logEvent('download_pdf', { noteCount: generatedNotes.length });
       console.log("download_pdf", { noteCount: generatedNotes.length });
     } catch (error) {
