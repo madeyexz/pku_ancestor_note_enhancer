@@ -5,10 +5,12 @@ import FileUploader from '@/components/FileUploader';
 import NotesSplitList from '@/components/NotesSplitList';
 import splitByHeading from '@/utils/splitByHeading';
 import downloadFile from '@/utils/downloadFile';
+import type { marked as MarkedType } from 'marked';
+import type { default as Html2PdfType } from 'html2pdf.js';
 
 // Browser-only imports
-let html2pdf: any;
-let marked: any;
+let html2pdf: typeof Html2PdfType;
+let marked: typeof MarkedType;
 
 if (typeof window !== 'undefined') {
   Promise.all([
