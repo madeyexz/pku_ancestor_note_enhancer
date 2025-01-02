@@ -5,6 +5,7 @@ import FileUploader from '@/components/FileUploader';
 import NotesSplitList from '@/components/NotesSplitList';
 import splitByHeading from '@/utils/splitByHeading';
 import downloadFile from '@/utils/downloadFile';
+import { logEvent } from '@/utils/amplititude';
 import type { marked as MarkedType } from 'marked';
 import type { default as Html2PdfType } from 'html2pdf.js';
 
@@ -108,6 +109,8 @@ export default function Home() {
 
     const blob = new Blob([mergedMd], { type: 'text/markdown' });
     downloadFile(blob, 'notes_merged.md');
+    logEvent('download_merged_md', { noteCount: generatedNotes.length });
+    console.log("download_merged_md", { noteCount: generatedNotes.length });
   };
 
   // 分开下载为 MD
@@ -123,6 +126,8 @@ export default function Home() {
       const fileName = `${note.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.md`;
       downloadFile(blob, fileName);
     });
+    logEvent('download_separate_md', { noteCount: generatedNotes.length });
+    console.log("download_separate_md", { noteCount: generatedNotes.length });
   };
 
   // 下载为 PDF
@@ -190,6 +195,8 @@ export default function Home() {
       };
 
       await html2pdfInstance.set(opt).from(tempElement).save();
+      logEvent('download_pdf', { noteCount: generatedNotes.length });
+      console.log("download_pdf", { noteCount: generatedNotes.length });
     } catch (error) {
       console.error(error);
       alert('导出 PDF 失败！');

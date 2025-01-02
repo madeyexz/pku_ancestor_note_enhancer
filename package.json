@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.11.11",
     "@vercel/analytics": "^1.4.1",
     "formidable": "^3.5.2",
     "html2pdf.js": "^0.10.2",
